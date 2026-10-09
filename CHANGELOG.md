@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 (not released)
+## 1.0.0 (2026-10-09)
 
 - Resource `healthchecksio_check` with each field of the API v3, import by unique_key, UUID
   or identity.
