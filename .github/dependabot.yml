@@ -8,6 +8,10 @@ updates:
     groups:
       terraform-plugin:
         patterns: ['github.com/hashicorp/terraform-plugin-*']
+      # One PR for all security updates. A bump of one module can need a bump of another.
+      security:
+        applies-to: security-updates
+        patterns: ['*']
   - package-ecosystem: github-actions
     directory: /
     schedule: {interval: weekly}
