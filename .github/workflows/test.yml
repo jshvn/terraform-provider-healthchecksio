@@ -1,0 +1,33 @@
+# The checks for each pull request and each push to main. Each step is a task in the
+# toolbox image (Dockerfile). Thus, a step fails here only if it fails on a laptop too.
+# Each action is pinned to a commit. Dependabot updates the pins.
+name: test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2.2.0
+        with:
+          version: 3.54.0
+      - run: task check
+      # A local healthchecks server in a container. No credentials.
+      - run: task acc
+      # The release archives for each platform, with no signature.
+      - run: task build

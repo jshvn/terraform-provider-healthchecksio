@@ -1,0 +1,16 @@
+# Weekly updates for the Go modules, the actions and the base image. Dependabot does not
+# read the ARG versions in the Dockerfile. `task outdated` shows them.
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule: {interval: weekly}
+    groups:
+      terraform-plugin:
+        patterns: ['github.com/hashicorp/terraform-plugin-*']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: {interval: weekly}
+  - package-ecosystem: docker
+    directory: /
+    schedule: {interval: weekly}

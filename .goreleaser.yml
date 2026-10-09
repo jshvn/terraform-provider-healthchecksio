@@ -1,0 +1,45 @@
+# The release build. Each archive, checksum and signature name is the name that the
+# Terraform Registry and the OpenTofu Registry require. CLAUDE.md gives the platforms.
+version: 2
+builds:
+  - env:
+      # The registries and HCP Terraform need a static binary.
+      - CGO_ENABLED=0
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    flags:
+      - -trimpath
+    ldflags:
+      - '-s -w -X main.version={{ .Version }}'
+    goos: [darwin, freebsd, linux, openbsd, windows]
+    goarch: ['386', amd64, arm, arm64, s390x]
+    goarm: ['6']
+    ignore:
+      - {goos: darwin, goarch: '386'}
+      - {goos: darwin, goarch: arm}
+      - {goos: darwin, goarch: s390x}
+      - {goos: freebsd, goarch: s390x}
+      - {goos: openbsd, goarch: s390x}
+      - {goos: windows, goarch: arm}
+      - {goos: windows, goarch: s390x}
+    binary: '{{ .ProjectName }}_v{{ .Version }}'
+archives:
+  - formats: [zip]
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+checksum:
+  name_template: '{{ .ProjectName }}_{{ .Version }}_SHA256SUMS'
+  algorithm: sha256
+  extra_files:
+    - glob: terraform-registry-manifest.json
+      name_template: '{{ .ProjectName }}_{{ .Version }}_manifest.json'
+signs:
+  # A binary (not armored) detached signature of the checksums, with the RSA key in
+  # GPG_FINGERPRINT. The Terraform Registry does not accept an ECC key.
+  - artifacts: checksum
+    args: ['--batch', '--pinentry-mode', 'loopback', '--passphrase-fd', '0', '--local-user', '{{ .Env.GPG_FINGERPRINT }}', '--output', '${signature}', '--detach-sign', '${artifact}']
+    stdin: '{{ .Env.GPG_PASSPHRASE }}'
+release:
+  extra_files:
+    - glob: terraform-registry-manifest.json
+      name_template: '{{ .ProjectName }}_{{ .Version }}_manifest.json'
+changelog:
+  disable: true

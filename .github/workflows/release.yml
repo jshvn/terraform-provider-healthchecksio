@@ -1,0 +1,68 @@
+# The release. A push of a tag vX.Y.Z makes a GitHub release with the signed archives
+# and a build provenance attestation. The Terraform Registry and the OpenTofu Registry
+# read that release. Only the owner registers the provider with a registry. This
+# workflow does not.
+#
+# The test job has no write permission and no secret. Only the release job can write
+# to the repository and read the signing key.
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2.2.0
+        with:
+          version: 3.54.0
+      - run: task check
+      - run: task acc
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # GoReleaser reads the tags.
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2.2.0
+        with:
+          version: 3.54.0
+      # The RSA signing key, from a vault addressed by UUID. The private key is base64 on one
+      # line, because a password field can lose the line breaks of an armored key.
+      - name: Load the signing key from 1Password
+        uses: 1password/load-secrets-action@70062d7a876d3eb6334754fa26efd2fbd90c32f2 # v5.0.1
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          GPG_PRIVATE_KEY_BASE64: op://ghoorskdilg6sqrmkfief2mq7i/terraform-provider-healthchecksio/gpg/private_key_base64
+          GPG_PASSPHRASE: op://ghoorskdilg6sqrmkfief2mq7i/terraform-provider-healthchecksio/gpg/passphrase
+      - run: task release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Find the checksums file
+        id: sums
+        run: echo "path=$(ls dist/*_SHA256SUMS)" >> "$GITHUB_OUTPUT"
+      # A provenance attestation for each file in the checksums file.
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: ${{ steps.sums.outputs.path }}

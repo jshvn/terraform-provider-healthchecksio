@@ -1,0 +1,8 @@
+.cache/
+.task/
+dist/
+/terraform-provider-healthchecksio
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
