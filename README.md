@@ -63,8 +63,8 @@ gives the procedure.
 
 ## Develop
 
-Install a container engine (Apple `container` or Docker) and
-[go-task](https://taskfile.dev). Each other tool is in the toolbox image. Run `task` to see
+Install a container engine (Apple `container` or Docker),
+[go-task](https://taskfile.dev) and jq. Each other tool is in the toolbox image. Run `task` to see
 the menu.
 
 | Task | What it does |

@@ -18,7 +18,7 @@ the design.
   the Terraform Registry, the OpenTofu Registry, nixpkgs and any other index. In a plan or
   a checklist, write each submission as one line, as a step for the owner.
 - Each tool operates in the toolbox image (`Dockerfile`). A laptop or a CI runner supplies
-  only a container engine and go-task. Bare `task` shows the menu.
+  only a container engine, go-task and jq (for the menu check). Bare `task` shows the menu.
 - Before a tag: `task check`, `task acc` and `task build` must pass, and `docs/` must agree
   with the schema (`task docs`).
 - Pin each action to a commit, with the version in a comment. Dependabot updates the pins.
