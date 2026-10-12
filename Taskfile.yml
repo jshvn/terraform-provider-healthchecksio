@@ -47,7 +47,7 @@ tasks:
         }
         note() { printf '  %-26s %s\n' '' "$d$1$r"; }
 
-        printf '\n%s   %s\n' "${b}terraform-provider-healthchecksio${r}" "${d}Terraform and OpenTofu provider for the healthchecks.io API v3${r}"
+        printf '\n%s   %s\n' "${b}jshvn/terraform-provider-healthchecksio${r}" "${d}Terraform and OpenTofu provider for the healthchecks.io API v3${r}"
 
         group read 'looks at GitHub, changes nothing'
         row 'task outdated' 'Each pinned tool version and the latest release' 'needs gh; fails when a version is old'
