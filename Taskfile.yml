@@ -2,8 +2,12 @@
 # healthchecks.io Management API v3. The registry address is jshvn/healthchecksio.
 #
 # Each Go command operates in the toolbox image (Dockerfile). Thus, a laptop or a CI runner
-# must supply only a container engine and go-task. CLAUDE.md gives the design.
+# must supply only a container engine, go-task and jq (for the menu check). CLAUDE.md gives
+# the design.
 version: '3'
+
+set: [errexit, pipefail]
+silent: true
 
 vars:
   ENGINE:
@@ -24,48 +28,57 @@ vars:
   MEMORY: '{{if eq .ENGINE "container"}}--memory 4G{{end}}'
 
 tasks:
-  # The menu. ponytail: a menu that we keep manually. go-task cannot put tasks in groups or
-  # add notes to them. Thus, add a line below for each new task. `task --list` gives the
-  # view that go-task makes.
   default:
     desc: Print the menu
-    silent: true
+    # ponytail: a menu that we keep manually. go-task cannot put tasks in groups or add notes
+    # to them. Thus, add a row below for each new task; menu-drift fails until the row is
+    # there. `task --list` gives the view that go-task makes.
     cmds:
       - |
-        b=$(printf '\033[1m'); c=$(printf '\033[1;36m'); d=$(printf '\033[2m'); r=$(printf '\033[0m')
-        printf '%s\n' \
-          "" \
-          "${b}terraform-provider-healthchecksio${r}   ${d}Terraform and OpenTofu provider for the healthchecks.io API v3${r}" \
-          "" \
-          "${c}read -- looks at GitHub, changes nothing${r}" \
-          "  task outdated     Each pinned tool version and the latest release ${d}(needs gh)${r}" \
-          "                    ${d}fails when a version is old; the weekly outdated workflow runs it${r}" \
-          "" \
-          "${c}checks -- offline, no credentials, inside the toolbox image${r}" \
-          "  task check        Everything CI runs offline: golangci-lint, go test, terraform fmt, actionlint, the docs" \
-          "                    ${d}fails when docs/ does not agree with the schema: run task docs${r}" \
-          "  task fmt          gofmt -w in place" \
-          "  task docs         Make docs/ again from the schema, templates/ and examples/" \
-          "  task build        Build the release archives for each platform into dist/, with no signature" \
-          "" \
-          "${c}acceptance -- a local healthchecks server in a container, no credentials${r}" \
-          "  task acc          Acceptance tests with terraform, then with tofu ${d}(RUN=<regexp> for one test)${r}" \
-          "                    ${d}tofu skips the list and action tests: OpenTofu does not support them${r}" \
-          "" \
-          "${c}write -- CI only, after a tag push${r}" \
-          "  task release      Sign the archives and publish the GitHub release of the tag at HEAD" \
-          "                    ${d}needs GPG_PRIVATE_KEY_BASE64, GPG_PASSPHRASE, GITHUB_TOKEN; registers with no registry${r}" \
-          "" \
-          "${c}toolbox${r}" \
-          "  task run -- <cmd> Run any command in the image with the repo mounted" \
-          "  task image        Build the image ${d}(skipped when it exists)${r}" \
-          "  task clean        Remove the image and the Go caches ${d}(after a Dockerfile edit)${r}" \
-          ""
+        b= c= d= r=
+        if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+          b=$(printf '\033[1m'); c=$(printf '\033[1;36m'); d=$(printf '\033[2m'); r=$(printf '\033[0m')
+        fi
+        group() { printf '\n%s   %s\n' "$c$1$r" "$d$2$r"; }
+        row() {
+          if [ ${#1} -le 26 ]; then printf '  %-26s %s\n' "$1" "$2"
+          else printf '  %s\n  %-26s %s\n' "$1" '' "$2"; fi
+          [ -z "${3:-}" ] || note "$3"
+        }
+        note() { printf '  %-26s %s\n' '' "$d$1$r"; }
+
+        printf '\n%s   %s\n' "${b}jshvn/terraform-provider-healthchecksio${r}" "${d}Terraform and OpenTofu provider for the healthchecks.io API v3${r}"
+
+        group read 'looks at GitHub, changes nothing'
+        row 'task outdated' 'Each pinned tool version and the latest release' 'needs gh; fails when a version is old'
+        note 'the weekly outdated workflow runs it'
+
+        group checks 'offline, no credentials, inside the toolbox image'
+        row 'task check' 'Everything CI runs offline, and this menu against the tasks'
+        note 'golangci-lint, go test, terraform fmt, actionlint, the docs'
+        note 'fails when docs/ does not agree with the schema: run task docs'
+        row 'task acc' 'Acceptance tests with terraform, then with tofu' 'a local healthchecks server in a container; RUN=<regexp> for one test'
+        note 'tofu skips the list and action tests: OpenTofu does not support them'
+        row 'task fmt' 'gofmt -w in place'
+
+        group build 'writes files in the checkout'
+        row 'task docs' 'Make docs/ again from the schema, templates/ and examples/'
+        row 'task build' 'Build the release archives for each platform into dist/, with no signature'
+
+        group write 'CI only, after a tag push'
+        row 'task release' 'Sign the archives and publish the GitHub release of the tag at HEAD'
+        note 'needs GPG_PRIVATE_KEY_BASE64, GPG_PASSPHRASE, GITHUB_TOKEN'
+        note 'registers with no registry'
+
+        group toolbox '{{.ENGINE}}, {{.IMAGE}}, built from the Dockerfile'
+        row 'task image' 'Build the image' 'skipped when it exists'
+        row 'task run -- <cmd>' 'Run any command in the image with the repo mounted'
+        row 'task clean' 'Remove the image and the Go caches' 'after a Dockerfile edit'
+        echo
 
   run:
     desc: 'Run any command in the toolbox image, e.g. task run -- go test ./...'
     deps: [image]
-    silent: true
     cmds:
       - >-
         {{.ENGINE}} run {{.QUIET}} {{.MEMORY}} --rm -i $(test -t 0 && test -t 1 && echo -t || true)
@@ -78,7 +91,6 @@ tasks:
   image:
     desc: Build the toolbox image
     run: once
-    silent: true
     # If the image is there, task does not build it again. Thus, a change to the Dockerfile
     # does not cause a new build. Do `task clean`. Then the next task builds a new image.
     status:
@@ -87,8 +99,10 @@ tasks:
       - '{{.ENGINE}} build -t {{.IMAGE}} .'
 
   check:
-    desc: Everything CI runs offline - golangci-lint, go test, terraform fmt, actionlint, the docs
+    desc: Everything CI runs offline - golangci-lint, go test, terraform fmt, actionlint, the docs, the menu
     cmds:
+      # On the host, because the toolbox image has no task and no jq.
+      - task: menu-drift
       # golangci-lint also runs gofmt and go vet (.golangci.yml). actionlint examines the
       # workflows.
       - task: run
@@ -146,9 +160,10 @@ tasks:
             Channel.objects.create(project=p, kind='email', value=n + '@example.org', email_verified=True, name=n)
         " >/dev/null
         # Docker finds the server by name on its network. Apple container gives each
-        # container an address on one shared network.
+        # container an address on one shared network. awk reads all of its input, so no
+        # command in the pipe stops early. `|| true` lets the next line report a missing address.
         if [ "$e" = docker ]; then host=$hc; else
-          host=$($e inspect "$hc" | tr -d ' \n' | grep -o '"ipv4Address":"[0-9.]*' | head -1 | cut -d'"' -f4)
+          host=$($e inspect "$hc" | tr -d ' \n' | grep -o '"ipv4Address":"[0-9.]*' | awk -F'"' 'NR == 1 { print $4 }' || true)
           [ -n "$host" ] || { echo "cannot find the address of the healthchecks server" >&2; exit 1; }
         fi
         for cli in terraform tofu; do
@@ -185,7 +200,6 @@ tasks:
 
   outdated:
     desc: Each pinned tool version and the latest release - fails when one is old, needs gh
-    silent: true
     cmds:
       - |
         latest() { gh api "repos/$1/releases/latest" --jq .tag_name 2>/dev/null || echo "?"; }
@@ -216,3 +230,18 @@ tasks:
       - '{{.ENGINE}} image rm {{.IMAGE}} >/dev/null 2>&1 || true'
       - chmod -R u+w .cache 2>/dev/null || true
       - rm -rf .cache dist
+
+  # Every public task has a desc and a menu row, and every row names a task. default and
+  # help are the menu itself. Needs task and jq wherever lint runs.
+  menu-drift:
+    internal: true
+    cmds:
+      - |
+        rows=$(grep -oE "row ['\"]task [^ '\"]+" '{{.ROOT_TASKFILE}}' | sed -E "s/^row ['\"]task //" || true)
+        bad=$(task -t '{{.ROOT_TASKFILE}}' --list-all --json --no-status | jq -r --arg rows "$rows" '
+          ($rows | split("\n") | map(select(. != ""))) as $r
+          | [.tasks[] | select(.task != "default" and .task != "help")] as $t
+          | ($t[] | select(.desc == "") | "task \(.task): no desc; describe it or mark it internal"),
+            ($t[] | select(.task | IN($r[]) | not) | "task \(.task): no row in the menu"),
+            ($r[] | select(IN($t[].task) | not) | "row task \(.): no such task")')
+        [ -z "$bad" ] || { printf '%s\n' "$bad" >&2; exit 1; }
