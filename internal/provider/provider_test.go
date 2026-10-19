@@ -447,12 +447,17 @@ func deleteOutside(res string) resource.TestCheckFunc {
 
 // sendPing gives a check function that sends a ping with body to the check res. The
 // ping URL in the state has the SITE_ROOT of the server, which the test cannot reach.
-// Thus, sendPing makes the URL from the API root.
+// Thus, sendPing makes the URL from the API root. The server closes each connection
+// after a response, and the client of the provider can leave such a connection in the
+// pool of the default transport. Go does not send a ping again after the server closes
+// the connection, because a ping is not idempotent. Thus, the ping uses a new
+// connection, as a create does in the client.
 func sendPing(res, body string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		uuid := s.RootModule().Resources[res].Primary.Attributes["uuid"]
 		url := strings.TrimSuffix(strings.TrimSuffix(os.Getenv(envURLVar), "/"), "/api/v3") + "/ping/" + uuid
-		resp, err := http.Post(url, "text/plain", strings.NewReader(body))
+		noReuse := &http.Client{Transport: &http.Transport{DisableKeepAlives: true}}
+		resp, err := noReuse.Post(url, "text/plain", strings.NewReader(body))
 		if err != nil {
 			return err
 		}
