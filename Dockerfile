@@ -1,6 +1,6 @@
 # The toolbox: each task operates in this image, on a laptop and in CI. Go builds the
 # provider for all release platforms from this one image, because the build uses no cgo.
-FROM golang:1.27.2-alpine@sha256:85dc1069ac644ea3c527b177303a406eb3358192816cd7f9e5848eb658851673
+FROM golang:1.27.2-alpine@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d
 # The mount does not always contain .git, and no code reads the VCS stamp.
 ENV GOFLAGS=-buildvcs=false CGO_ENABLED=0
 # GoReleaser needs git for a release, and gpg to sign the checksums.
