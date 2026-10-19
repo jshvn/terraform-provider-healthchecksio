@@ -11,14 +11,14 @@ RUN apk add --no-cache git gnupg
 # download agrees with the SHA256SUMS file of its release. The hash of that file is in
 # this Dockerfile. Thus, one hash for each tool covers each architecture. To change a
 # version, change the version and the hash of its SHA256SUMS file together.
-ARG TERRAFORM=1.16.5
-ARG TERRAFORM_SUMS=909485e738f17e345047a74c06644a5a5b5f1d6e5bf2a4d10e0d416342db8e77
+ARG TERRAFORM=1.16.6
+ARG TERRAFORM_SUMS=bf79be4b295c42fb9a6be5ef2742d2f954a6264df33f6263a9059062e83fe7a1
 ARG TOFU=1.13.1
 ARG TOFU_SUMS=f4a03dd8613320c665848cb6e1962ee112d777c9c6a8a725586dcc341b1c7252
 ARG GORELEASER=2.18.3
 ARG GORELEASER_SUMS=a40282e5419a5e7176c78afae243777ae0da7376e165d8cf59805910d2c84e1e
-ARG GOLANGCI_LINT=2.14.0
-ARG GOLANGCI_LINT_SUMS=7b4eeb888873ac45ec58a640c3243c43a3540e097f6c4410efd2bdb306340023
+ARG GOLANGCI_LINT=2.15.0
+ARG GOLANGCI_LINT_SUMS=364f56cb7ef4555e42bb1754b432b0f40bd914477d962c5888c8a8b5378ce8b6
 
 RUN set -eu; \
     case "$(apk --print-arch)" in \
