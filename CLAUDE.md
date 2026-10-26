@@ -73,12 +73,11 @@ the design.
 - **timeout and schedule are exclusive.** `ModifyPlan` sets the other kind to null, the
   default timeout (86400) when a simple check has none, and the default tz (UTC) when a
   check with a schedule has none. The API keeps the schedule when it gets both.
-- **A create uses a new connection.** Some servers (uWSGI http-socket, as in the
-  healthchecks image) send HTTP/1.1 with no "Connection: close", and then close the
-  connection. Go can send the next request on that closed connection. Go sends the request
-  again only if it is idempotent. The client marks each request as idempotent, except a
-  create. A create uses a client with no reuse of connections. Thus, a create cannot make
-  two checks.
+- **A create uses a new connection.** Some servers (for example uWSGI with http-socket)
+  send HTTP/1.1 with no "Connection: close", and then close the connection. Go can send
+  the next request on that closed connection. Go sends the request again only if it is
+  idempotent. The client marks each request as idempotent, except a create. A create uses
+  a client with no reuse of connections. Thus, a create cannot make two checks.
 - **Retries.** The client tries again after HTTP 429, and after a 5xx or a network error
   except for a create. It obeys Retry-After. The API accepts a maximum of 100 requests in
   one minute.
