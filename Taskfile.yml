@@ -51,7 +51,7 @@ tasks:
 
         group read 'looks at GitHub, changes nothing'
         row 'task outdated' 'Each pinned tool version and the latest release' 'needs gh; fails when a version is old'
-        note 'the weekly outdated workflow runs it'
+        note 'the weekly outdated workflow keeps an issue open while one is old'
 
         group checks 'offline, no credentials, inside the toolbox image'
         row 'task check' 'Everything CI runs offline, and this menu against the tasks'
@@ -200,14 +200,18 @@ tasks:
 
   outdated:
     desc: Each pinned tool version and the latest release - fails when one is old, needs gh
+    # Exit 1 when a version is old, 2 when a latest release cannot be read. The outdated
+    # workflow runs it with -x and opens an issue only on 1.
     cmds:
       - |
-        latest() { gh api "repos/$1/releases/latest" --jq .tag_name 2>/dev/null || echo "?"; }
+        # gh api prints the error body to stdout. Thus, keep its output only on success.
+        latest() { v=$(gh api "repos/$1/releases/latest" --jq .tag_name 2>/dev/null) || v="?"; echo "$v"; }
         pin() { sed -n "s/^ARG $1=//p" Dockerfile; }
-        old=0
+        old=0 err=0
         row() {
           printf '%-14s %-10s %s\n' "$1" "$2" "$3"
-          if [ "${2#v}" != "${3#v}" ]; then old=1; fi
+          if [ "$3" = "?" ]; then err=1
+          elif [ "${2#v}" != "${3#v}" ]; then old=1; fi
         }
         printf '%-14s %-10s %s\n' TOOL PINNED LATEST
         row terraform "$(pin TERRAFORM)" "$(latest hashicorp/terraform)"
@@ -216,6 +220,7 @@ tasks:
         row healthchecks "$(echo '{{.HC_IMAGE}}' | sed 's/.*:\(v[0-9.]*\)@.*/\1/')" "$(latest healthchecks/healthchecks)"
         row golangci-lint "$(pin GOLANGCI_LINT)" "$(latest golangci/golangci-lint)"
         row go-task "$(sed -n 's/^ *version: //p' .github/workflows/test.yml)" "$(latest go-task/task)"
+        if [ "$err" = 1 ]; then echo "Could not read a latest release." >&2; exit 2; fi
         if [ "$old" = 1 ]; then echo "A pinned version is not the latest release." >&2; exit 1; fi
 
   fmt:
