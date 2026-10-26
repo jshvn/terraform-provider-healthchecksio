@@ -23,8 +23,8 @@ the design.
   with the schema (`task docs`).
 - Pin each action to a commit, with the version in a comment. Dependabot updates the pins.
   The versions in the `Dockerfile` ARGs and of go-task are pinned by hand. `task outdated`
-  compares them with the latest releases, and the weekly `outdated` workflow fails when
-  one is old.
+  compares them with the latest releases, and the weekly `outdated` workflow keeps an
+  issue with the label `outdated` open while one is old.
 
 ## The files
 
