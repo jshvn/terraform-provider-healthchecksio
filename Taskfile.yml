@@ -20,7 +20,7 @@ vars:
       fi
   IMAGE: terraform-provider-healthchecksio-toolbox:local
   # The server for the acceptance tests. Change the tag and the digest together.
-  HC_IMAGE: healthchecks/healthchecks:v4.4@sha256:aa08a61b0dcfd83f1332eab195d5cec1b595ae076eb8388cadf8a3d597114f9b
+  HC_IMAGE: healthchecks/healthchecks:v5.0.2@sha256:2785de4d59a0bcad8bef05e72cf31f20f871cc0b917bfe7441cbc5932f043239
   # Apple container shows a progress spinner on a terminal. `docker run` has no such flag.
   QUIET: '{{if eq .ENGINE "container"}}--progress none{{end}}'
   # Apple container gives a container 1 GB. Four Go builds in parallel need more. Docker
