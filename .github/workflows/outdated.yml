@@ -24,8 +24,10 @@ jobs:
       - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2.2.0
         with:
           version: 3.54.0
+      # In Actions, go-task writes an ::error annotation for a failed task to stdout. An
+      # empty GITHUB_ACTIONS stops it, so the table has only the rows.
       - run: |
-          if table=$(task -x outdated); then code=0; else code=$?; fi
+          if table=$(GITHUB_ACTIONS='' task -x outdated); then code=0; else code=$?; fi
           [ "$code" -le 1 ] || exit "$code"
           issue=$(gh issue list --label outdated --state open --limit 1 --json number --jq '.[].number')
           if [ "$code" = 0 ]; then
