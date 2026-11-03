@@ -54,8 +54,8 @@ jobs:
           export-env: true
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          GPG_PRIVATE_KEY_BASE64: op://ghoorskdilg6sqrmkfief2mq7i/terraform-provider-healthchecksio/gpg/private_key_base64
-          GPG_PASSPHRASE: op://ghoorskdilg6sqrmkfief2mq7i/terraform-provider-healthchecksio/gpg/passphrase
+          GPG_PRIVATE_KEY_BASE64: op://ooxkcdl2gy7toy3expcgtndmuy/terraform-provider-healthchecksio/gpg/private_key_base64
+          GPG_PASSPHRASE: op://ooxkcdl2gy7toy3expcgtndmuy/terraform-provider-healthchecksio/gpg/passphrase
       - run: task release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
