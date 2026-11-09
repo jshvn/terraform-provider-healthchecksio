@@ -1,0 +1,32 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>jshvn/renovate-config"],
+  "postUpdateOptions": ["gomodTidy"],
+  "customManagers": [
+    {
+      "description": "The healthchecks image in the Taskfile is written repo:tag@sha256:digest; the shape is what is matched",
+      "customType": "regex",
+      "managerFilePatterns": ["/^Taskfile\\.yml$/"],
+      "matchStrings": [
+        "(?<depName>[^\\s\"'=:]+):(?<currentValue>[^\\s\"'@]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "description": "A version an action reads from its version input, with a # renovate: comment above it that names the release source",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/.+\\.ya?ml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-.]+?) depName=(?<depName>[^\\s]+?)(?: extractVersion=(?<extractVersion>[^\\s]+?))?\\s+version:\\s*[\"']?(?<currentValue>[^\\s\"']+)"
+      ]
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "A tool version in the Dockerfile has the hash of its SHA256SUMS file beside it, which no registry gives: each tool is its own pull request, whose image build fails until the hash is changed with it",
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["Dockerfile"],
+      "groupName": null
+    }
+  ]
+}

@@ -73,7 +73,6 @@ the menu.
 | `task acc` | The acceptance tests against a local healthchecks server, with terraform and with tofu |
 | `task build` | The release archives for each platform, with no signature |
 | `task docs` | Makes `docs/` from the schema, `templates/` and `examples/` |
-| `task outdated` | Each pinned tool version and the latest release. Fails when one is old |
 
 `CLAUDE.md` gives the design. `SECURITY.md` tells how to report a vulnerability.
 

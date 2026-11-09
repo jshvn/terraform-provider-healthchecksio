@@ -25,6 +25,7 @@ jobs:
           persist-credentials: false
       - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2.2.0
         with:
+          # renovate: datasource=github-releases depName=go-task/task extractVersion=^v(?<version>.*)$
           version: 3.54.0
       - run: task check
       - run: task acc
@@ -45,6 +46,7 @@ jobs:
           persist-credentials: false
       - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2.2.0
         with:
+          # renovate: datasource=github-releases depName=go-task/task extractVersion=^v(?<version>.*)$
           version: 3.54.0
       # The RSA signing key, from a vault addressed by UUID. The private key is base64 on one
       # line, because a password field can lose the line breaks of an armored key.

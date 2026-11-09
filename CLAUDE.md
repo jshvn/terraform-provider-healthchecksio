@@ -21,10 +21,12 @@ the design.
   only a container engine, go-task and jq (for the menu check). Bare `task` shows the menu.
 - Before a tag: `task check`, `task acc` and `task build` must pass, and `docs/` must agree
   with the schema (`task docs`).
-- Pin each action to a commit, with the version in a comment. Dependabot updates the pins.
-  The versions in the `Dockerfile` ARGs and of go-task are pinned by hand. `task outdated`
-  compares them with the latest releases, and the weekly `outdated` workflow keeps an
-  issue with the label `outdated` open while one is old.
+- Pin each action to a commit, with the version in a comment. Renovate opens a pull
+  request for each new version. `renovate.json` extends the shared jshvn preset, and a
+  `# renovate:` comment above a pinned tool version in the `Dockerfile` or a workflow names
+  its release source. A tool version in the `Dockerfile` has the hash of its SHA256SUMS
+  file beside it, and no registry gives that hash. Thus, change the hash in the pull
+  request, or the image build fails.
 
 ## The files
 
@@ -53,7 +55,6 @@ the design.
 - `.github/workflows/test.yml`: the checks. `.github/workflows/release.yml`: the release
   after a tag push, in two jobs. The test job has no write permission and no secret. The
   release job signs, publishes and makes the provenance attestation.
-  `.github/workflows/outdated.yml`: the weekly version check.
 - `SECURITY.md`: what the provider keeps secret, and how to report a vulnerability.
 
 ## Must knows
@@ -171,9 +172,11 @@ provider does not need one.
 
 ## Maintenance
 
-- Dependabot opens weekly PRs for the Go modules, the actions and the base image.
-- `task outdated` shows the versions in the `Dockerfile` ARGs, the healthchecks image and
-  go-task. Change a version and the hash of its SHA256SUMS file together.
+- Renovate opens a pull request on Monday for each update: the Go modules, the actions, the
+  base image, the tool versions in the `Dockerfile`, the healthchecks image in the Taskfile
+  and go-task in the workflows. Minor and patch updates are in one pull request. A major
+  update and a `Dockerfile` tool are each their own. Change a `Dockerfile` version and the
+  hash of its SHA256SUMS file together.
 - When healthchecks.io changes the API, examine `templates/docs/api.md` and
   `hc/api/views.py` (`Spec`, `_update`) upstream. `client.Check`, `client.CheckSpec` and
   `checkFields` follow them.

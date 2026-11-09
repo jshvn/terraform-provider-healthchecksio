@@ -9,15 +9,21 @@ RUN apk add --no-cache git gnupg
 # The acceptance tests run each CLI, GoReleaser makes the release archives, and
 # golangci-lint examines the code. Each
 # download agrees with the SHA256SUMS file of its release. The hash of that file is in
-# this Dockerfile. Thus, one hash for each tool covers each architecture. To change a
-# version, change the version and the hash of its SHA256SUMS file together.
-ARG TERRAFORM=1.17.0
+# this Dockerfile. Thus, one hash for each tool covers each architecture. Renovate opens a
+# pull request for a new version: the comment above each version names its release
+# source. No registry gives the hash. Thus, change the hash of the SHA256SUMS file in that
+# pull request, or the image build fails.
+# renovate: datasource=github-releases depName=hashicorp/terraform extractVersion=^v(?<version>.*)$
+ARG TERRAFORM_VERSION=1.17.0
 ARG TERRAFORM_SUMS=8a324f66c91b6d741e88eed20f655bcf4d92dbe34bdcc894d085dfaf3d432abd
-ARG TOFU=1.13.2
+# renovate: datasource=github-releases depName=opentofu/opentofu extractVersion=^v(?<version>.*)$
+ARG TOFU_VERSION=1.13.2
 ARG TOFU_SUMS=b360c787954a5f181bdc6757b96aed478f6a974df35ca08894bb53af4012f936
-ARG GORELEASER=2.19.0
+# renovate: datasource=github-releases depName=goreleaser/goreleaser extractVersion=^v(?<version>.*)$
+ARG GORELEASER_VERSION=2.19.0
 ARG GORELEASER_SUMS=f326ec8ef1e68d76cc9cdfeaedfbe34cea85ffd775d781e8fc2d6bb3fd80923e
-ARG GOLANGCI_LINT=2.15.0
+# renovate: datasource=github-releases depName=golangci/golangci-lint extractVersion=^v(?<version>.*)$
+ARG GOLANGCI_LINT_VERSION=2.15.0
 ARG GOLANGCI_LINT_SUMS=364f56cb7ef4555e42bb1754b432b0f40bd914477d962c5888c8a8b5378ce8b6
 
 RUN set -eu; \
@@ -32,18 +38,18 @@ RUN set -eu; \
       echo "$hash  $sums" | sha256sum -c -; \
       wget -q -O "$file" "$url"; \
       grep " $file\$" "$sums" | sha256sum -c -; }; \
-    get "https://releases.hashicorp.com/terraform/${TERRAFORM}/terraform_${TERRAFORM}_linux_${arch}.zip" \
-      "terraform_${TERRAFORM}_SHA256SUMS" "$TERRAFORM_SUMS" "terraform_${TERRAFORM}_linux_${arch}.zip"; \
-    unzip -q -o "terraform_${TERRAFORM}_linux_${arch}.zip" terraform -d /usr/local/bin; \
-    get "https://github.com/opentofu/opentofu/releases/download/v${TOFU}/tofu_${TOFU}_linux_${arch}.tar.gz" \
-      "tofu_${TOFU}_SHA256SUMS" "$TOFU_SUMS" "tofu_${TOFU}_linux_${arch}.tar.gz"; \
-    tar -xzf "tofu_${TOFU}_linux_${arch}.tar.gz" -C /usr/local/bin tofu; \
-    get "https://github.com/goreleaser/goreleaser/releases/download/v${GORELEASER}/goreleaser_Linux_${grarch}.tar.gz" \
+    get "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${arch}.zip" \
+      "terraform_${TERRAFORM_VERSION}_SHA256SUMS" "$TERRAFORM_SUMS" "terraform_${TERRAFORM_VERSION}_linux_${arch}.zip"; \
+    unzip -q -o "terraform_${TERRAFORM_VERSION}_linux_${arch}.zip" terraform -d /usr/local/bin; \
+    get "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_${arch}.tar.gz" \
+      "tofu_${TOFU_VERSION}_SHA256SUMS" "$TOFU_SUMS" "tofu_${TOFU_VERSION}_linux_${arch}.tar.gz"; \
+    tar -xzf "tofu_${TOFU_VERSION}_linux_${arch}.tar.gz" -C /usr/local/bin tofu; \
+    get "https://github.com/goreleaser/goreleaser/releases/download/v${GORELEASER_VERSION}/goreleaser_Linux_${grarch}.tar.gz" \
       checksums.txt "$GORELEASER_SUMS" "goreleaser_Linux_${grarch}.tar.gz"; \
     tar -xzf "goreleaser_Linux_${grarch}.tar.gz" -C /usr/local/bin goreleaser; \
-    get "https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT}/golangci-lint-${GOLANGCI_LINT}-linux-${arch}.tar.gz" \
-      "golangci-lint-${GOLANGCI_LINT}-checksums.txt" "$GOLANGCI_LINT_SUMS" "golangci-lint-${GOLANGCI_LINT}-linux-${arch}.tar.gz"; \
-    tar -xzf "golangci-lint-${GOLANGCI_LINT}-linux-${arch}.tar.gz" -C /usr/local/bin --strip-components=1 \
-      "golangci-lint-${GOLANGCI_LINT}-linux-${arch}/golangci-lint"; \
+    get "https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-linux-${arch}.tar.gz" \
+      "golangci-lint-${GOLANGCI_LINT_VERSION}-checksums.txt" "$GOLANGCI_LINT_SUMS" "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-${arch}.tar.gz"; \
+    tar -xzf "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-${arch}.tar.gz" -C /usr/local/bin --strip-components=1 \
+      "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-${arch}/golangci-lint"; \
     rm -rf /tmp/*; \
     terraform version; tofu version; goreleaser --version | head -1; golangci-lint version
